@@ -1,0 +1,39 @@
+{
+  "type": "FeatureCollection",
+  "bbox": [-118.6497, 34.15577, -118.6479, 34.15646],
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "23961 Craftsman Rd",
+        "address": "23961 Craftsman Road, Calabasas, CA"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-118.6497, 34.15630]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "5101 Douglas Fir Rd",
+        "address": "5101-5111 & 5115 Douglas Fir Road, Calabasas, CA"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-118.6489, 34.15646]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "23907 Ventura Blvd",
+        "address": "23907-23947 Ventura Blvd. & 23930-23978 Craftsman Road, Calabasas, CA"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-118.6479, 34.15577]
+      }
+    }
+  ]
+}
