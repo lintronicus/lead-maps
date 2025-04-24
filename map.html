@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Lead Property Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+  mapboxgl.accessToken = 'YOUR_MAPBOX_ACCESS_TOKEN';
+  const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/streets-v11',
+    center: [-118.2437, 34.0522],
+    zoom: 10
+  });
+
+  const params = new URLSearchParams(window.location.search);
+  const leadId = params.get("lead_id");
+  const geojsonUrl = `https://raw.githubusercontent.com/lintronicus/lead-maps/main/geojson/${leadId}.geojson`;
+
+  fetch(geojsonUrl)
+    .then(res => res.json())
+    .then(data => {
+      const bounds = new mapboxgl.LngLatBounds();
+
+      data.features.forEach(feature => {
+        const { address, squareFeet, photoUrl } = feature.properties;
+        const coords = feature.geometry.coordinates;
+        const popup = new mapboxgl.Popup().setHTML(`
+          <strong>${address}</strong><br>
+          ${squareFeet}<br>
+          <img src="${photoUrl}" style="width:100px;height:auto;margin-top:5px;" />
+        `);
+
+        new mapboxgl.Marker().setLngLat(coords).setPopup(popup).addTo(map);
+        bounds.extend(coords);
+      });
+
+      map.fitBounds(bounds, { padding: 50 });
+    });
+</script>
+</body>
+</html>
