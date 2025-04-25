@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Property Map Viewer</title>
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    .mapboxgl-popup { max-width: 400px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .mapboxgl-popup-content { padding: 15px; }
+    .property-popup h3 { margin: 0 0 10px 0; font-weight: 600; }
+    .property-popup p { margin: 5px 0; }
+    .property-popup .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; }
+    #loading { 
+      position: absolute; 
+      top: 0; 
+      left: 0; 
+      width: 100%; 
+      height: 100%; 
+      background: rgba(255,255,255,0.8); 
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .spinner {
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #3498db;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin-right: 15px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div id="loading">
+    <div class="spinner"></div>
+    <div>Loading property data...</div>
+  </div>
+
+  <script>
+    // Replace with your Mapbox access token (you'll need to get a free token from mapbox.com)
+    mapboxgl.accessToken = sk.eyJ1IjoibGVhZHN5ZnRlciIsImEiOiJjbTl2bHZwY2MwbXBtMmpwcjU0aTRtaDBjIn0.qFV2ea2ioSfQaAoDqffygA;
+    
+    // Get the GeoJSON data from URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const encodedData = urlParams.get('data');
+    
+    // Initialize map
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/light-v11',
+      center: [-118.65, 34.15], // Default center (will be adjusted based on data)
+      zoom: 13 // Default zoom (will be adjusted based on data)
+    });
+    
+    // Load GeoJSON data
+    map.on('load', function() {
+      let geojson;
+      
+      if (encodedData) {
+        try {
+          // Decode and parse the data
+          const jsonString = decodeURIComponent(encodedData);
+          geojson = JSON.parse(jsonString);
+          processGeoJSON(geojson);
+        } catch (e) {
+          showError("Error parsing GeoJSON data: " + e.message);
+        }
+      } else {
+        // Sample data if none provided
+        geojson = {
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "properties": {
+                "Lead Name": "Sample Lead",
+                "Property Name": "Sample Property",
+                "Asset Class": "Office",
+                "Sq Ft": 10000,
+                "# Units": 5
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [-118.65, 34.15]
+              }
+            }
+          ]
+        };
+        processGeoJSON(geojson);
+      }
+    });
+    
+    function processGeoJSON(geojson) {
+      if (!geojson || !geojson.features || !geojson.features.length) {
+        showError("No property data found");
+        return;
+      }
+      
+      // Calculate bounds to fit all properties
+      const bounds = new mapboxgl.LngLatBounds();
+      geojson.features.forEach(feature => {
+        if (feature.geometry && feature.geometry.coordinates) {
+          bounds.extend(feature.geometry.coordinates);
+        }
+      });
+      
+      // Set appropriate zoom to show all properties
+      map.fitBounds(bounds, {
+        padding: 50, // Add some padding around properties
+        maxZoom: 15  // Don't zoom in too far
+      });
+      
+      // Add markers for each property
+      geojson.features.forEach(feature => {
+        const coords = feature.geometry.coordinates;
+        const props = feature.properties;
+        
+        // Create custom popup HTML
+        const popupContent = document.createElement('div');
+        popupContent.className = 'property-popup';
+        popupContent.innerHTML = `
+          <h3>${props["Property Name"] || "Property"}</h3>
+          <p><strong>Address:</strong> ${props["Street Address"] || "N/A"}</p>
+          <div class="stats">
+            <p><strong>Asset Class:</strong> ${props["Asset Class"] || "N/A"}</p>
+            <p><strong>Sq Ft:</strong> ${(props["Sq Ft"] || 0).toLocaleString()}</p>
+            <p><strong>Units:</strong> ${props["# Units"] || 0}</p>
+          </div>
+        `;
+        
+        // Create marker with popup
+        const popup = new mapboxgl.Popup({ offset: 25 })
+          .setDOMContent(popupContent);
+        
+        new mapboxgl.Marker({
+          color: '#3887be'
+        })
+          .setLngLat(coords)
+          .setPopup(popup)
+          .addTo(map);
+      });
+      
+      // Hide loading indicator
+      document.getElementById('loading').style.display = 'none';
+    }
+    
+    function showError(message) {
+      const loadingEl = document.getElementById('loading');
+      loadingEl.innerHTML = `<div style="color: red;">${message}</div>`;
+    }
+  </script>
+</body>
+</html>
