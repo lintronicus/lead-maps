@@ -14,6 +14,20 @@
     .property-popup h3 { margin: 0 0 10px 0; }
     .property-popup p { margin: 5px 0; }
     .lead-name { color: #3887be; font-weight: bold; }
+    .nav-link {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 8px 15px;
+      background-color: #3887be;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+    .nav-link:hover {
+      background-color: #2a678d;
+    }
     #loading { 
       position: absolute; 
       top: 0; 
@@ -84,12 +98,24 @@
           
           document.getElementById('error').textContent = `Found ${geojson.features.length} properties`;
           
-          // Helper function to create popup HTML with Lead/Deal Name
-          function createPopupHTML(props) {
+          // Helper function to create Google Maps navigation URL
+          function createGoogleMapsUrl(coords, name) {
+            // Format: https://www.google.com/maps/dir/?api=1&destination=lat,lng&destination_place_id=NAME
+            const baseUrl = 'https://www.google.com/maps/dir/?api=1';
+            const destination = `${coords[1]},${coords[0]}`; // Google Maps uses lat,lng format
+            const destinationName = encodeURIComponent(name || 'Property');
+            
+            return `${baseUrl}&destination=${destination}&travelmode=driving&destination_place_name=${destinationName}`;
+          }
+          
+          // Helper function to create popup HTML with Lead/Deal Name and navigation link
+          function createPopupHTML(props, coords) {
             let leadNameHTML = '';
             if (props["Lead/Deal Name"]) {
               leadNameHTML = `<p class="lead-name"><strong>Lead/Deal:</strong> ${props["Lead/Deal Name"]}</p>`;
             }
+            
+            const googleMapsUrl = createGoogleMapsUrl(coords, props["Property Name"]);
             
             return `
               <div class="property-popup">
@@ -99,6 +125,7 @@
                 <p><strong>Sq Ft:</strong> ${(props["Sq Ft"] || 0).toLocaleString()}</p>
                 <p><strong>Units:</strong> ${props["# Units"] || 0}</p>
                 ${leadNameHTML}
+                <a href="${googleMapsUrl}" class="nav-link" target="_blank">Navigate in Google Maps</a>
               </div>
             `;
           }
@@ -118,7 +145,7 @@
             
             // Add marker with popup
             const popup = new mapboxgl.Popup({ offset: 25 })
-              .setHTML(createPopupHTML(props));
+              .setHTML(createPopupHTML(props, coords));
             
             new mapboxgl.Marker({ color: '#3887be' })
               .setLngLat(coords)
@@ -174,7 +201,7 @@
               const props = feature.properties;
               
               const popup = new mapboxgl.Popup({ offset: 25 })
-                .setHTML(createPopupHTML(props));
+                .setHTML(createPopupHTML(props, coords));
               
               new mapboxgl.Marker({ color: '#3887be' })
                 .setLngLat(coords)
