@@ -39,13 +39,14 @@
 
   <script>
     try {
-      // Make sure to put your token in quotes and use a public token (pk...)
+      // Set your Mapbox access token
       mapboxgl.accessToken = 'pk.eyJ1IjoibGVhZHN5ZnRlciIsImEiOiJjbTd2Z2k3MjYwYjFvMnFvZHd0NmE4M3pvIn0.xHYtpfn9dQa7CZOoY29-cA';
       
       document.getElementById('error').textContent = 'Checking Mapbox token...';
       
-      if (!mapboxgl.accessToken || mapboxgl.accessToken === 'pk.eyJ1IjoibGVhZHN5ZnRlciIsImEiOiJjbTd2Z2k3MjYwYjFvMnFvZHd0NmE4M3pvIn0.xHYtpfn9dQa7CZOoY29-cA') {
-        throw new Error('Please replace YOUR_PUBLIC_TOKEN_HERE with an actual Mapbox public token');
+      // Fixed validation logic
+      if (!mapboxgl.accessToken) {
+        throw new Error('Mapbox token is not set');
       }
       
       document.getElementById('error').textContent = 'Initializing map...';
