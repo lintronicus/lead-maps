@@ -13,7 +13,6 @@
     .mapboxgl-popup-content { padding: 15px; }
     .property-popup h3 { margin: 0 0 10px 0; }
     .property-popup p { margin: 5px 0; }
-    .deal-name { color: #3887be; font-weight: bold; }
     .nav-link {
       display: inline-block;
       margin-top: 10px;
@@ -128,6 +127,10 @@
       
       // Function to create popup HTML
       function createPopupHTML(props, coords) {
+        // Debug what properties are available
+        console.log("Property fields:", Object.keys(props));
+        console.log("Property values:", props);
+        
         // Use Simple Address as the header if available, otherwise fallback to Property Name
         const header = props["Simple Address"] || props["Property Name"] || "Property";
         
@@ -137,7 +140,7 @@
         
         // Prepare Deal Name field (from Lead Name)
         const dealName = props["Lead Name"] ? 
-          `<p class="deal-name"><strong>Deal Name:</strong> ${props["Lead Name"]}</p>` : '';
+          `<p><strong>Deal Name:</strong> ${props["Lead Name"]}</p>` : '';
         
         // Prepare Asset Class field
         const assetClass = props["Asset Class"] ? 
@@ -228,6 +231,9 @@
           const jsonString = decodeURIComponent(encodedData);
           geojsonData = JSON.parse(jsonString);
           
+          // Debug the GeoJSON structure
+          console.log("GeoJSON structure:", geojsonData);
+          
           document.getElementById('error').textContent = 'Data parsed, adding to map...';
           
           if (!geojsonData.features || geojsonData.features.length === 0) {
@@ -295,14 +301,17 @@
           document.getElementById('loading').style.display = 'none';
         } catch (e) {
           document.getElementById('error').textContent = 'Error processing data: ' + e.message;
+          console.error("Error processing data:", e);
         }
       });
       
       map.on('error', function(e) {
         document.getElementById('error').textContent = 'Map error: ' + e.error.message;
+        console.error("Map error:", e.error);
       });
     } catch (e) {
       document.getElementById('error').textContent = 'Error: ' + e.message;
+      console.error("Initialization error:", e);
     }
   </script>
 </body>
