@@ -146,9 +146,9 @@
         const assetClass = props["Asset Class"] ? 
           `<p><strong>Asset Class:</strong> ${props["Asset Class"]}</p>` : '';
         
-        // Prepare Sq Ft field (from RSF)
-        const sqFt = props["RSF"] ? 
-          `<p><strong>Sq Ft:</strong> ${parseInt(props["RSF"]).toLocaleString()}</p>` : '';
+        // Updated: Look for Sq Ft instead of RSF
+        const sqFt = props["Sq Ft"] ? 
+          `<p><strong>Sq Ft:</strong> ${parseInt(props["Sq Ft"]).toLocaleString()}</p>` : '';
         
         // Prepare Units field
         const units = props["Units"] ? 
