@@ -28,6 +28,22 @@
     .nav-link:hover {
       background-color: #2a678d;
     }
+    #style-selector {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1;
+      background: white;
+      padding: 10px;
+      border-radius: 4px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    #style-selector select {
+      padding: 5px;
+      font-size: 14px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
     #loading { 
       position: absolute; 
       top: 0; 
@@ -47,6 +63,21 @@
 </head>
 <body>
   <div id="map"></div>
+  
+  <!-- Map style selector -->
+  <div id="style-selector">
+    <select id="map-style">
+      <option value="mapbox://styles/mapbox/streets-v12">Streets</option>
+      <option value="mapbox://styles/mapbox/light-v11">Light</option>
+      <option value="mapbox://styles/mapbox/dark-v11">Dark</option>
+      <option value="mapbox://styles/mapbox/outdoors-v12">Outdoors</option>
+      <option value="mapbox://styles/mapbox/satellite-v9">Satellite</option>
+      <option value="mapbox://styles/mapbox/satellite-streets-v12">Satellite Streets</option>
+      <option value="mapbox://styles/mapbox/navigation-day-v1">Navigation Day</option>
+      <option value="mapbox://styles/mapbox/navigation-night-v1">Navigation Night</option>
+    </select>
+  </div>
+  
   <div id="loading">
     <div>Loading property data...</div>
     <div id="error"></div>
@@ -65,9 +96,10 @@
       
       document.getElementById('error').textContent = 'Initializing map...';
       
+      // Initialize with Streets style
       const map = new mapboxgl.Map({
         container: 'map',
-        style: 'mapbox://styles/mapbox/light-v11',
+        style: 'mapbox://styles/mapbox/streets-v12',
         center: [-118.65, 34.15],
         zoom: 13
       });
@@ -76,6 +108,113 @@
       
       const urlParams = new URLSearchParams(window.location.search);
       const encodedData = urlParams.get('data');
+      
+      // Store GeoJSON data and markers globally to handle style changes
+      let geojsonData = null;
+      let markers = [];
+      
+      // Function to handle style changes
+      document.getElementById('map-style').addEventListener('change', function(e) {
+        const style = e.target.value;
+        map.setStyle(style);
+        
+        // Re-add markers after style change
+        map.once('styledata', function() {
+          if (geojsonData) {
+            addMarkersToMap(geojsonData);
+          }
+        });
+      });
+      
+      // Function to create popup HTML
+      function createPopupHTML(props, coords) {
+        // Use Simple Address as the header if available, otherwise fallback to Property Name
+        const header = props["Simple Address"] || props["Property Name"] || "Property";
+        
+        // Prepare property name field
+        const propertyName = props["Property Name"] ? 
+          `<p><strong>Property Name:</strong> ${props["Property Name"]}</p>` : '';
+        
+        // Prepare Deal Name field (from Lead Name)
+        const dealName = props["Lead Name"] ? 
+          `<p class="deal-name"><strong>Deal Name:</strong> ${props["Lead Name"]}</p>` : '';
+        
+        // Prepare Asset Class field
+        const assetClass = props["Asset Class"] ? 
+          `<p><strong>Asset Class:</strong> ${props["Asset Class"]}</p>` : '';
+        
+        // Prepare Sq Ft field (from RSF)
+        const sqFt = props["RSF"] ? 
+          `<p><strong>Sq Ft:</strong> ${parseInt(props["RSF"]).toLocaleString()}</p>` : '';
+        
+        // Prepare Units field
+        const units = props["Units"] ? 
+          `<p><strong># Units:</strong> ${props["Units"]}</p>` : '';
+        
+        const googleMapsUrl = createGoogleMapsUrl(coords, header);
+        
+        return `
+          <div class="property-popup">
+            <h3>${header}</h3>
+            ${propertyName}
+            ${dealName}
+            ${assetClass}
+            ${sqFt}
+            ${units}
+            <a href="${googleMapsUrl}" class="nav-link" target="_blank">Navigate in Google Maps</a>
+          </div>
+        `;
+      }
+      
+      // Helper function to create Google Maps navigation URL
+      function createGoogleMapsUrl(coords, name) {
+        const baseUrl = 'https://www.google.com/maps/dir/?api=1';
+        const destination = `${coords[1]},${coords[0]}`; // Google Maps uses lat,lng format
+        const destinationName = encodeURIComponent(name || 'Property');
+        
+        return `${baseUrl}&destination=${destination}&travelmode=driving&destination_place_name=${destinationName}`;
+      }
+      
+      // Function to add markers to map
+      function addMarkersToMap(geojson) {
+        // Clear existing markers
+        markers.forEach(marker => marker.remove());
+        markers = [];
+        
+        // Special handling for single property vs multiple properties
+        if (geojson.features.length === 1) {
+          const feature = geojson.features[0];
+          const coords = feature.geometry.coordinates;
+          const props = feature.properties;
+          
+          // Add marker with popup
+          const popup = new mapboxgl.Popup({ offset: 25 })
+            .setHTML(createPopupHTML(props, coords));
+          
+          const marker = new mapboxgl.Marker({ color: '#3887be' })
+            .setLngLat(coords)
+            .setPopup(popup)
+            .addTo(map);
+            
+          markers.push(marker);
+        } else {
+          // Add markers for each property
+          geojson.features.forEach(feature => {
+            const coords = feature.geometry.coordinates;
+            const props = feature.properties;
+            
+            const popup = new mapboxgl.Popup({ offset: 25 })
+              .setHTML(createPopupHTML(props, coords));
+            
+            const marker = new mapboxgl.Marker({ color: '#3887be' })
+              .setLngLat(coords)
+              .setPopup(popup)
+              .addTo(map);
+              
+            markers.push(marker);
+          });
+        }
+      }
       
       map.on('load', function() {
         document.getElementById('error').textContent = 'Map loaded, processing data...';
@@ -87,104 +226,39 @@
         
         try {
           const jsonString = decodeURIComponent(encodedData);
-          const geojson = JSON.parse(jsonString);
+          geojsonData = JSON.parse(jsonString);
           
           document.getElementById('error').textContent = 'Data parsed, adding to map...';
           
-          if (!geojson.features || geojson.features.length === 0) {
+          if (!geojsonData.features || geojsonData.features.length === 0) {
             document.getElementById('error').textContent = 'No features found in data';
             return;
           }
           
-          document.getElementById('error').textContent = `Found ${geojson.features.length} properties`;
+          document.getElementById('error').textContent = `Found ${geojsonData.features.length} properties`;
           
-          // Helper function to create Google Maps navigation URL
-          function createGoogleMapsUrl(coords, name) {
-            // Format: https://www.google.com/maps/dir/?api=1&destination=lat,lng&destination_place_id=NAME
-            const baseUrl = 'https://www.google.com/maps/dir/?api=1';
-            const destination = `${coords[1]},${coords[0]}`; // Google Maps uses lat,lng format
-            const destinationName = encodeURIComponent(name || 'Property');
-            
-            return `${baseUrl}&destination=${destination}&travelmode=driving&destination_place_name=${destinationName}`;
-          }
-          
-          // Helper function to create popup HTML with reorganized fields
-          function createPopupHTML(props, coords) {
-            // Use Simple Address as the header if available, otherwise fallback to Property Name
-            const header = props["Simple Address"] || props["Property Name"] || "Property";
-            
-            // Prepare property name field
-            const propertyName = props["Property Name"] ? 
-              `<p><strong>Property Name:</strong> ${props["Property Name"]}</p>` : '';
-            
-            // Prepare Deal Name field (from Lead Name)
-            const dealName = props["Lead Name"] ? 
-              `<p class="deal-name"><strong>Deal Name:</strong> ${props["Lead Name"]}</p>` : '';
-            
-            // Prepare Asset Class field
-            const assetClass = props["Asset Class"] ? 
-              `<p><strong>Asset Class:</strong> ${props["Asset Class"]}</p>` : '';
-            
-            // Prepare Sq Ft field (from RSF)
-            const sqFt = props["RSF"] ? 
-              `<p><strong>Sq Ft:</strong> ${parseInt(props["RSF"]).toLocaleString()}</p>` : '';
-            
-            // Prepare Units field
-            const units = props["Units"] ? 
-              `<p><strong># Units:</strong> ${props["Units"]}</p>` : '';
-            
-            const googleMapsUrl = createGoogleMapsUrl(coords, header);
-            
-            return `
-              <div class="property-popup">
-                <h3>${header}</h3>
-                ${propertyName}
-                ${dealName}
-                ${assetClass}
-                ${sqFt}
-                ${units}
-                <a href="${googleMapsUrl}" class="nav-link" target="_blank">Navigate in Google Maps</a>
-              </div>
-            `;
-          }
-          
-          // Special handling for single property vs multiple properties
-          if (geojson.features.length === 1) {
+          // Calculate map bounds
+          if (geojsonData.features.length === 1) {
             // For a single property, use direct center and fixed zoom
-            const feature = geojson.features[0];
+            const feature = geojsonData.features[0];
             const coords = feature.geometry.coordinates;
-            const props = feature.properties;
             
             // Set center and zoom directly
             map.jumpTo({
               center: coords,
               zoom: 14  // Fixed zoom level for single property
             });
-            
-            // Add marker with popup
-            const popup = new mapboxgl.Popup({ offset: 25 })
-              .setHTML(createPopupHTML(props, coords));
-            
-            new mapboxgl.Marker({ color: '#3887be' })
-              .setLngLat(coords)
-              .setPopup(popup)
-              .addTo(map);
           } else {
             // For multiple properties, use bounds calculation
-            let sumLat = 0;
-            let sumLng = 0;
             let minLng = 180;
             let maxLng = -180;
             let minLat = 90;
             let maxLat = -90;
             
-            geojson.features.forEach(feature => {
+            geojsonData.features.forEach(feature => {
               const coords = feature.geometry.coordinates;
               const lng = coords[0];
               const lat = coords[1];
-              
-              sumLat += lat;
-              sumLng += lng;
               
               minLng = Math.min(minLng, lng);
               maxLng = Math.max(maxLng, lng);
@@ -212,21 +286,10 @@
               padding: {top: 100, bottom: 100, left: 100, right: 100},
               maxZoom: zoom
             });
-            
-            // Add markers for each property
-            geojson.features.forEach(feature => {
-              const coords = feature.geometry.coordinates;
-              const props = feature.properties;
-              
-              const popup = new mapboxgl.Popup({ offset: 25 })
-                .setHTML(createPopupHTML(props, coords));
-              
-              new mapboxgl.Marker({ color: '#3887be' })
-                .setLngLat(coords)
-                .setPopup(popup)
-                .addTo(map);
-            });
           }
+          
+          // Add markers to map
+          addMarkersToMap(geojsonData);
           
           // Hide loading indicator
           document.getElementById('loading').style.display = 'none';
