@@ -44,7 +44,6 @@
       
       document.getElementById('error').textContent = 'Checking Mapbox token...';
       
-      // Fixed validation logic
       if (!mapboxgl.accessToken) {
         throw new Error('Mapbox token is not set');
       }
@@ -84,11 +83,30 @@
           
           document.getElementById('error').textContent = `Found ${geojson.features.length} properties`;
           
-          // Calculate bounds
-          const bounds = new mapboxgl.LngLatBounds();
+          // Calculate center point manually
+          let sumLat = 0;
+          let sumLng = 0;
+          let minLng = 180;
+          let maxLng = -180;
+          let minLat = 90;
+          let maxLat = -90;
+          
           geojson.features.forEach(feature => {
-            bounds.extend(feature.geometry.coordinates);
+            const coords = feature.geometry.coordinates;
+            const lng = coords[0];
+            const lat = coords[1];
+            
+            sumLat += lat;
+            sumLng += lng;
+            
+            minLng = Math.min(minLng, lng);
+            maxLng = Math.max(maxLng, lng);
+            minLat = Math.min(minLat, lat);
+            maxLat = Math.max(maxLat, lat);
           });
+          
+          const avgLat = sumLat / geojson.features.length;
+          const avgLng = sumLng / geojson.features.length;
           
           // Add markers
           geojson.features.forEach(feature => {
@@ -112,19 +130,32 @@
               .addTo(map);
           });
           
-          // Fit map to show all properties with more padding and zoom control
-          map.fitBounds(bounds, { 
-            padding: 100,  // Increased padding around properties
-            maxZoom: 14    // Limit how far it can zoom in
+          // Calculate appropriate zoom level based on the distance between min and max coordinates
+          const lngDiff = Math.abs(maxLng - minLng);
+          const latDiff = Math.abs(maxLat - minLat);
+          let zoom = 14; // Default zoom
+          
+          if (lngDiff > 0.1 || latDiff > 0.1) {
+            zoom = 12; // Zoom out for wider areas
+          } else if (lngDiff > 0.01 || latDiff > 0.01) {
+            zoom = 13; // Medium zoom for medium areas
+          }
+          
+          // Force the center and zoom level
+          map.jumpTo({
+            center: [avgLng, avgLat],
+            zoom: zoom
           });
           
-          // Add a small delay to ensure proper zoom after all markers are added
-          setTimeout(function() {
-            // Double-check zoom level isn't too close
-            if (map.getZoom() > 14) {
-              map.setZoom(14);
-            }
-          }, 500);
+          // Add padding to ensure all markers are visible
+          const sw = [minLng, minLat];
+          const ne = [maxLng, maxLat];
+          const bounds = new mapboxgl.LngLatBounds(sw, ne);
+          
+          map.fitBounds(bounds, {
+            padding: {top: 100, bottom: 100, left: 100, right: 100},
+            maxZoom: zoom
+          });
           
           // Hide loading indicator
           document.getElementById('loading').style.display = 'none';
