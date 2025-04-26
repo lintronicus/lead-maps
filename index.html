@@ -13,6 +13,7 @@
     .mapboxgl-popup-content { padding: 15px; }
     .property-popup h3 { margin: 0 0 10px 0; }
     .property-popup p { margin: 5px 0; }
+    .lead-name { color: #3887be; font-weight: bold; }
     #loading { 
       position: absolute; 
       top: 0; 
@@ -83,6 +84,25 @@
           
           document.getElementById('error').textContent = `Found ${geojson.features.length} properties`;
           
+          // Helper function to create popup HTML with Lead/Deal Name
+          function createPopupHTML(props) {
+            let leadNameHTML = '';
+            if (props["Lead/Deal Name"]) {
+              leadNameHTML = `<p class="lead-name"><strong>Lead/Deal:</strong> ${props["Lead/Deal Name"]}</p>`;
+            }
+            
+            return `
+              <div class="property-popup">
+                <h3>${props["Property Name"] || "Property"}</h3>
+                <p><strong>Address:</strong> ${props["Street Address"] || "N/A"}</p>
+                <p><strong>Asset Class:</strong> ${props["Asset Class"] || "N/A"}</p>
+                <p><strong>Sq Ft:</strong> ${(props["Sq Ft"] || 0).toLocaleString()}</p>
+                <p><strong>Units:</strong> ${props["# Units"] || 0}</p>
+                ${leadNameHTML}
+              </div>
+            `;
+          }
+          
           // Special handling for single property vs multiple properties
           if (geojson.features.length === 1) {
             // For a single property, use direct center and fixed zoom
@@ -98,15 +118,7 @@
             
             // Add marker with popup
             const popup = new mapboxgl.Popup({ offset: 25 })
-              .setHTML(`
-                <div class="property-popup">
-                  <h3>${props["Property Name"] || "Property"}</h3>
-                  <p><strong>Address:</strong> ${props["Street Address"] || "N/A"}</p>
-                  <p><strong>Asset Class:</strong> ${props["Asset Class"] || "N/A"}</p>
-                  <p><strong>Sq Ft:</strong> ${(props["Sq Ft"] || 0).toLocaleString()}</p>
-                  <p><strong>Units:</strong> ${props["# Units"] || 0}</p>
-                </div>
-              `);
+              .setHTML(createPopupHTML(props));
             
             new mapboxgl.Marker({ color: '#3887be' })
               .setLngLat(coords)
@@ -162,15 +174,7 @@
               const props = feature.properties;
               
               const popup = new mapboxgl.Popup({ offset: 25 })
-                .setHTML(`
-                  <div class="property-popup">
-                    <h3>${props["Property Name"] || "Property"}</h3>
-                    <p><strong>Address:</strong> ${props["Street Address"] || "N/A"}</p>
-                    <p><strong>Asset Class:</strong> ${props["Asset Class"] || "N/A"}</p>
-                    <p><strong>Sq Ft:</strong> ${(props["Sq Ft"] || 0).toLocaleString()}</p>
-                    <p><strong>Units:</strong> ${props["# Units"] || 0}</p>
-                  </div>
-                `);
+                .setHTML(createPopupHTML(props));
               
               new mapboxgl.Marker({ color: '#3887be' })
                 .setLngLat(coords)
