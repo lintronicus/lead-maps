@@ -13,7 +13,7 @@
     .mapboxgl-popup-content { padding: 15px; }
     .property-popup h3 { margin: 0 0 10px 0; }
     .property-popup p { margin: 5px 0; }
-    .lead-name { color: #3887be; font-weight: bold; }
+    .deal-name { color: #3887be; font-weight: bold; }
     .nav-link {
       display: inline-block;
       margin-top: 10px;
@@ -108,23 +108,41 @@
             return `${baseUrl}&destination=${destination}&travelmode=driving&destination_place_name=${destinationName}`;
           }
           
-          // Helper function to create popup HTML with Lead/Deal Name and navigation link
+          // Helper function to create popup HTML with reorganized fields
           function createPopupHTML(props, coords) {
-            let leadNameHTML = '';
-            if (props["Lead/Deal Name"]) {
-              leadNameHTML = `<p class="lead-name"><strong>Lead/Deal:</strong> ${props["Lead/Deal Name"]}</p>`;
-            }
+            // Use Simple Address as the header if available, otherwise fallback to Property Name
+            const header = props["Simple Address"] || props["Property Name"] || "Property";
             
-            const googleMapsUrl = createGoogleMapsUrl(coords, props["Property Name"]);
+            // Prepare property name field
+            const propertyName = props["Property Name"] ? 
+              `<p><strong>Property Name:</strong> ${props["Property Name"]}</p>` : '';
+            
+            // Prepare Deal Name field (from Lead Name)
+            const dealName = props["Lead Name"] ? 
+              `<p class="deal-name"><strong>Deal Name:</strong> ${props["Lead Name"]}</p>` : '';
+            
+            // Prepare Asset Class field
+            const assetClass = props["Asset Class"] ? 
+              `<p><strong>Asset Class:</strong> ${props["Asset Class"]}</p>` : '';
+            
+            // Prepare Sq Ft field (from RSF)
+            const sqFt = props["RSF"] ? 
+              `<p><strong>Sq Ft:</strong> ${parseInt(props["RSF"]).toLocaleString()}</p>` : '';
+            
+            // Prepare Units field
+            const units = props["Units"] ? 
+              `<p><strong># Units:</strong> ${props["Units"]}</p>` : '';
+            
+            const googleMapsUrl = createGoogleMapsUrl(coords, header);
             
             return `
               <div class="property-popup">
-                <h3>${props["Property Name"] || "Property"}</h3>
-                <p><strong>Address:</strong> ${props["Street Address"] || "N/A"}</p>
-                <p><strong>Asset Class:</strong> ${props["Asset Class"] || "N/A"}</p>
-                <p><strong>Sq Ft:</strong> ${(props["Sq Ft"] || 0).toLocaleString()}</p>
-                <p><strong>Units:</strong> ${props["# Units"] || 0}</p>
-                ${leadNameHTML}
+                <h3>${header}</h3>
+                ${propertyName}
+                ${dealName}
+                ${assetClass}
+                ${sqFt}
+                ${units}
                 <a href="${googleMapsUrl}" class="nav-link" target="_blank">Navigate in Google Maps</a>
               </div>
             `;
