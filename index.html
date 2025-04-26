@@ -112,8 +112,19 @@
               .addTo(map);
           });
           
-          // Fit map to show all properties
-          map.fitBounds(bounds, { padding: 50 });
+          // Fit map to show all properties with more padding and zoom control
+          map.fitBounds(bounds, { 
+            padding: 100,  // Increased padding around properties
+            maxZoom: 14    // Limit how far it can zoom in
+          });
+          
+          // Add a small delay to ensure proper zoom after all markers are added
+          setTimeout(function() {
+            // Double-check zoom level isn't too close
+            if (map.getZoom() > 14) {
+              map.setZoom(14);
+            }
+          }, 500);
           
           // Hide loading indicator
           document.getElementById('loading').style.display = 'none';
