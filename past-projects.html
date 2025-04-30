@@ -13,7 +13,7 @@
     .mapboxgl-popup-content { padding: 15px; }
     .property-popup h3 { margin: 0 0 10px 0; }
     .property-popup p { margin: 5px 0; }
-    .property-popup img { margin-top: 10px; border-radius: 4px; }
+    .property-popup img { border-radius: 4px; object-fit: cover; width: 100%; }
     .nav-link {
       display: inline-block;
       margin-top: 10px;
@@ -123,15 +123,21 @@
         const googleMapsUrl = createGoogleMapsUrl(coords, name);
 
         const imageHtml = photoUrl 
-          ? `<img src="${photoUrl}" alt="Photo of ${name}" style="width:100%;">`
+          ? `
+            <div style="margin-top:10px; margin-bottom:10px; max-height:180px; overflow:hidden;">
+              <img src="${photoUrl}" 
+                   alt="Photo of ${name}" 
+                   style="width:100%;" 
+                   loading="lazy">
+            </div>`
           : "";
 
         return `
           <div class="property-popup">
             <h3>${name}</h3>
+            ${imageHtml}
             <p><strong>Address:</strong> ${address}</p>
             <a href="${googleMapsUrl}" class="nav-link" target="_blank">Navigate in Google Maps</a>
-            ${imageHtml}
           </div>
         `;
       }
