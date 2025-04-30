@@ -13,6 +13,7 @@
     .mapboxgl-popup-content { padding: 15px; }
     .property-popup h3 { margin: 0 0 10px 0; }
     .property-popup p { margin: 5px 0; }
+    .property-popup img { margin-top: 10px; border-radius: 4px; }
     .nav-link {
       display: inline-block;
       margin-top: 10px;
@@ -118,13 +119,19 @@
       function createPopupHTML(props, coords) {
         const name = props["project_name"] || "Unnamed";
         const address = props["project_address"] || "No address provided";
+        const photoUrl = props["photo_url"];
         const googleMapsUrl = createGoogleMapsUrl(coords, name);
+
+        const imageHtml = photoUrl 
+          ? `<img src="${photoUrl}" alt="Photo of ${name}" style="width:100%;">`
+          : "";
 
         return `
           <div class="property-popup">
             <h3>${name}</h3>
             <p><strong>Address:</strong> ${address}</p>
             <a href="${googleMapsUrl}" class="nav-link" target="_blank">Navigate in Google Maps</a>
+            ${imageHtml}
           </div>
         `;
       }
