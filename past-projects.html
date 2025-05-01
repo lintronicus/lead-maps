@@ -102,11 +102,20 @@
       }
 
       // Construct the URL for the latest JSON file based on the timestamp
-      const jsonUrl = `https://raw.githubusercontent.com/lintronicus/images/main/data/projects_${timestamp}.json`;
+      const jsonUrl = `https://raw.githubusercontent.com/lintronicus/images/main/data/${timestamp}.json`;
+
+      console.log("Fetching JSON from: " + jsonUrl); // Debugging log
 
       fetch(jsonUrl)
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) {
+            throw new Error('Failed to fetch JSON: ' + res.statusText);
+          }
+          return res.json();
+        })
         .then(data => {
+          console.log("Data loaded successfully:", data); // Debugging log
+
           // Parse and add the data to the map
           geojsonData = {
             type: "FeatureCollection",
@@ -133,6 +142,7 @@
         })
         .catch(err => {
           document.getElementById('error').textContent = "Error loading map data: " + err.message;
+          console.error("Error loading JSON:", err);
         });
 
       // Function to create a Google Maps navigation URL
