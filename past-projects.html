@@ -124,7 +124,7 @@
               properties: {
                 project_name: item.project_name,
                 project_address: item.project_address,
-                photo_url: item.photo_url,
+                photo_url: item.photo_url,  // Ensure the photo_url field is properly inserted
                 pano_latitude: parseFloat(item.pano_latitude),
                 pano_longitude: parseFloat(item.pano_longitude),
                 heading: parseFloat(item.heading)
@@ -173,7 +173,8 @@
         const googleMapsUrl = createGoogleMapsUrl(coords, name);
         const streetViewUrl = createStreetViewUrl(panoLat, panoLng, heading);
 
-        const imageHtml = (photoUrl && streetViewUrl)
+        // Fix: Ensure the photo URL is correctly displayed inside the popup
+        const imageHtml = (photoUrl)
           ? ` 
             <div style="margin-top:10px; margin-bottom:10px; max-height:180px; overflow:hidden;">
               <a href="${streetViewUrl}" target="_blank" rel="noopener noreferrer">
