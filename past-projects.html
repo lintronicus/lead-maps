@@ -93,26 +93,16 @@
         zoom: 13
       });
 
-      const urlParams = new URLSearchParams(window.location.search);
-      const encodedData = urlParams.get('data');
+      // Fetch the timestamp from the URL (e.g., ?t=1636160712310)
+      const timestamp = new URLSearchParams(window.location.search).get('t');
 
-      let geojsonData = null;
-      let markers = [];
+      // Construct the URL for the latest JSON file based on the timestamp
+      const jsonUrl = `https://raw.githubusercontent.com/lintronicus/images/main/data/projects_${timestamp}.json`;
 
-      document.getElementById('map-style').addEventListener('change', function(e) {
-        const style = e.target.value;
-        map.setStyle(style);
-        map.once('styledata', function() {
-          if (geojsonData) {
-            addMarkersToMap(geojsonData);
-          }
-        });
-      });
-
-      // Fetch the GeoJSON data from your GitHub
-      fetch("https://lintronicus.github.io/images/data/projects.json")
+      fetch(jsonUrl)
         .then(res => res.json())
         .then(data => {
+          // Parse and add the data to the map
           geojsonData = {
             type: "FeatureCollection",
             features: data.map(item => ({
@@ -140,18 +130,21 @@
           document.getElementById('error').textContent = "Error loading map data: " + err.message;
         });
 
+      // Function to create a Google Maps navigation URL
       function createGoogleMapsUrl(coords, name) {
         const baseUrl = 'https://www.google.com/maps/dir/?api=1';
-        const destination = `${coords[1]},${coords[0]}`;
+        const destination = `${coords[1]},${coords[0]}`; // Google Maps uses lat, lng
         const destinationName = encodeURIComponent(name || 'Property');
         return `${baseUrl}&destination=${destination}&travelmode=driving&destination_place_name=${destinationName}`;
       }
 
+      // Function to create a Street View URL
       function createStreetViewUrl(panoLat, panoLng, heading) {
         if (!panoLat || !panoLng) return null;
         return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${panoLat},${panoLng}${heading ? `&heading=${heading}` : ''}`;
       }
 
+      // Function to generate the popup HTML for each marker
       function createPopupHTML(props, coords) {
         const name = props["project_name"] || "Unnamed";
         const address = props["project_address"] || "No address provided";
@@ -183,6 +176,7 @@
         `;
       }
 
+      // Function to add markers to the map
       function addMarkersToMap(geojson) {
         markers.forEach(marker => marker.remove());
         markers = [];
@@ -204,8 +198,8 @@
       }
 
       map.on('load', function() {
-        if (!encodedData) {
-          document.getElementById('error').textContent = 'No data parameter found in URL';
+        if (!timestamp) {
+          document.getElementById('error').textContent = 'No timestamp found in URL';
           return;
         }
 
@@ -216,31 +210,6 @@
           if (!geojsonData.features || geojsonData.features.length === 0) {
             document.getElementById('error').textContent = 'No features found in data';
             return;
-          }
-
-          if (geojsonData.features.length === 1) {
-            const coords = geojsonData.features[0].geometry.coordinates;
-            map.jumpTo({ center: coords, zoom: 14 });
-          } else {
-            let minLng = 180, maxLng = -180, minLat = 90, maxLat = -90;
-
-            geojsonData.features.forEach(feature => {
-              const [lng, lat] = feature.geometry.coordinates;
-              minLng = Math.min(minLng, lng);
-              maxLng = Math.max(maxLng, lng);
-              minLat = Math.min(minLat, lat);
-              maxLat = Math.max(maxLat, lat);
-            });
-
-            const bounds = new mapboxgl.LngLatBounds(
-              [minLng, minLat],
-              [maxLng, maxLat]
-            );
-
-            map.fitBounds(bounds, {
-              padding: { top: 100, bottom: 100, left: 100, right: 100 },
-              maxZoom: 13
-            });
           }
 
           addMarkersToMap(geojsonData);
