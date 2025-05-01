@@ -98,7 +98,7 @@
 
       if (!timestamp) {
         document.getElementById('error').textContent = 'Timestamp parameter missing';
-        return;
+        return; // This line is fine now inside a function
       }
 
       // Construct the URL for the latest JSON file based on the timestamp
@@ -117,7 +117,7 @@
           console.log("Data loaded successfully:", data); // Debugging log
 
           // Parse and add the data to the map
-          geojsonData = {
+          const geojsonData = {
             type: "FeatureCollection",
             features: data.map(item => ({
               type: "Feature",
@@ -215,7 +215,7 @@
       map.on('load', function() {
         if (!timestamp) {
           document.getElementById('error').textContent = 'Timestamp parameter missing';
-          return;
+          return; // Safe return inside a function
         }
       });
 
