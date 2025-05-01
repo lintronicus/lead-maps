@@ -98,7 +98,8 @@
 
       if (!timestamp) {
         document.getElementById('error').textContent = 'Timestamp parameter missing';
-        return;  // Return here to prevent further execution if no timestamp is found
+        document.getElementById('loading').style.display = 'none';
+        return;  // Prevent further execution if no timestamp
       }
 
       // Construct the URL for the latest JSON file based on the timestamp
@@ -124,7 +125,7 @@
               properties: {
                 project_name: item.project_name,
                 project_address: item.project_address,
-                photo_url: item.photo_url,  // Ensure the photo_url field is properly inserted
+                photo_url: item.photo_url,
                 pano_latitude: parseFloat(item.pano_latitude),
                 pano_longitude: parseFloat(item.pano_longitude),
                 heading: parseFloat(item.heading)
@@ -173,7 +174,6 @@
         const googleMapsUrl = createGoogleMapsUrl(coords, name);
         const streetViewUrl = createStreetViewUrl(panoLat, panoLng, heading);
 
-        // Fix: Ensure the photo URL is correctly displayed inside the popup
         const imageHtml = (photoUrl)
           ? ` 
             <div style="margin-top:10px; margin-bottom:10px; max-height:180px; overflow:hidden;">
