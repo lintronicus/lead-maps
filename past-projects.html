@@ -109,6 +109,37 @@
         });
       });
 
+      // Fetch the GeoJSON data from your GitHub
+      fetch("https://lintronicus.github.io/images/data/projects.json")
+        .then(res => res.json())
+        .then(data => {
+          geojsonData = {
+            type: "FeatureCollection",
+            features: data.map(item => ({
+              type: "Feature",
+              properties: {
+                project_name: item.project_name,
+                project_address: item.project_address,
+                photo_url: item.photo_url,
+                pano_latitude: parseFloat(item.pano_latitude),
+                pano_longitude: parseFloat(item.pano_longitude),
+                heading: parseFloat(item.heading)
+              },
+              geometry: {
+                type: "Point",
+                coordinates: [parseFloat(item.longitude), parseFloat(item.latitude)]
+              }
+            }))
+          };
+
+          // Add markers to the map
+          addMarkersToMap(geojsonData);
+          document.getElementById('loading').style.display = 'none';
+        })
+        .catch(err => {
+          document.getElementById('error').textContent = "Error loading map data: " + err.message;
+        });
+
       function createGoogleMapsUrl(coords, name) {
         const baseUrl = 'https://www.google.com/maps/dir/?api=1';
         const destination = `${coords[1]},${coords[0]}`;
@@ -132,13 +163,12 @@
         const streetViewUrl = createStreetViewUrl(panoLat, panoLng, heading);
 
         const imageHtml = (photoUrl && streetViewUrl)
-          ? `
+          ? ` 
             <div style="margin-top:10px; margin-bottom:10px; max-height:180px; overflow:hidden;">
               <a href="${streetViewUrl}" target="_blank" rel="noopener noreferrer">
                 <img src="${photoUrl}" 
                      alt="Photo of ${name}" 
-                     loading="lazy"
-                     style="width:100%; object-fit:cover; border-radius:4px;">
+                     loading="lazy">
               </a>
             </div>`
           : "";
