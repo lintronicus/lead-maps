@@ -98,7 +98,7 @@
 
       if (!timestamp) {
         document.getElementById('error').textContent = 'Timestamp parameter missing';
-        return; // This line is fine now inside a function
+        return; // Now this is inside the function and works correctly
       }
 
       // Construct the URL for the latest JSON file based on the timestamp
@@ -215,7 +215,7 @@
       map.on('load', function() {
         if (!timestamp) {
           document.getElementById('error').textContent = 'Timestamp parameter missing';
-          return; // Safe return inside a function
+          return; // Safely exit
         }
       });
 
