@@ -90,23 +90,21 @@
       const map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/streets-v12',
-        center: [-118.65, 34.15],
-        zoom: 13
+        center: [-118.65, 34.15], // default center
+        zoom: 13 // default zoom
       });
 
-      // Fetch the timestamp from the URL (e.g., ?t=1636160712310)
       const timestamp = new URLSearchParams(window.location.search).get('t');
 
       if (!timestamp) {
         document.getElementById('error').textContent = 'Timestamp parameter missing';
         document.getElementById('loading').style.display = 'none';
-        return;  // Stop further execution if no timestamp is found
+        return;
       }
 
-      // Construct the URL for the latest JSON file based on the timestamp
       const jsonUrl = `https://raw.githubusercontent.com/lintronicus/images/main/data/projects_${timestamp}.json`;
 
-      console.log("Fetching JSON from: " + jsonUrl); // Debugging log
+      console.log("Fetching JSON from: " + jsonUrl);
 
       fetch(jsonUrl)
         .then(res => {
@@ -116,9 +114,8 @@
           return res.json();
         })
         .then(data => {
-          console.log("Data loaded successfully:", data); // Debugging log
+          console.log("Data loaded successfully:", data);
 
-          // Parse and add the data to the map
           const geojsonData = {
             type: "FeatureCollection",
             features: data.map(item => ({
@@ -138,10 +135,14 @@
             }))
           };
 
-          console.log("GeoJSON data:", geojsonData); // Debugging log
+          console.log("GeoJSON data:", geojsonData);
 
           // Add markers to the map
           addMarkersToMap(geojsonData);
+
+          // Fit the map bounds to all markers
+          fitMapToBounds(geojsonData);
+
           document.getElementById('loading').style.display = 'none';
         })
         .catch(err => {
@@ -150,21 +151,18 @@
           document.getElementById('loading').style.display = 'none';
         });
 
-      // Function to create a Google Maps navigation URL
       function createGoogleMapsUrl(coords, name) {
         const baseUrl = 'https://www.google.com/maps/dir/?api=1';
-        const destination = `${coords[1]},${coords[0]}`; // Google Maps uses lat, lng
+        const destination = `${coords[1]},${coords[0]}`;
         const destinationName = encodeURIComponent(name || 'Property');
         return `${baseUrl}&destination=${destination}&travelmode=driving&destination_place_name=${destinationName}`;
       }
 
-      // Function to create a Street View URL
       function createStreetViewUrl(panoLat, panoLng, heading) {
         if (!panoLat || !panoLng) return null;
         return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${panoLat},${panoLng}${heading ? `&heading=${heading}` : ''}`;
       }
 
-      // Function to generate the popup HTML for each marker
       function createPopupHTML(props, coords) {
         const name = props["project_name"] || "Unnamed";
         const address = props["project_address"] || "No address provided";
@@ -196,7 +194,6 @@
         `;
       }
 
-      // Function to add markers to the map
       function addMarkersToMap(geojson) {
         const markers = [];
 
@@ -216,7 +213,22 @@
         });
       }
 
-      // Map event handlers
+      // Fit map to bounds of all markers
+      function fitMapToBounds(geojson) {
+        let minLng = 180, maxLng = -180, minLat = 90, maxLat = -90;
+
+        geojson.features.forEach(feature => {
+          const [lng, lat] = feature.geometry.coordinates;
+          minLng = Math.min(minLng, lng);
+          maxLng = Math.max(maxLng, lng);
+          minLat = Math.min(minLat, lat);
+          maxLat = Math.max(maxLat, lat);
+        });
+
+        const bounds = new mapboxgl.LngLatBounds([minLng, minLat], [maxLng, maxLat]);
+        map.fitBounds(bounds, { padding: { top: 50, bottom: 50, left: 50, right: 50 } });
+      }
+
       map.on('load', function() {
         if (!timestamp) {
           document.getElementById('error').textContent = 'Timestamp parameter missing';
@@ -229,7 +241,6 @@
         document.getElementById('loading').style.display = 'none';
       });
 
-      // Add map style selector functionality
       document.getElementById('map-style').addEventListener('change', function() {
         map.setStyle(this.value);
       });
