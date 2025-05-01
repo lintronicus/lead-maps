@@ -96,6 +96,11 @@
       // Fetch the timestamp from the URL (e.g., ?t=1636160712310)
       const timestamp = new URLSearchParams(window.location.search).get('t');
 
+      if (!timestamp) {
+        document.getElementById('error').textContent = 'Timestamp parameter missing';
+        return;
+      }
+
       // Construct the URL for the latest JSON file based on the timestamp
       const jsonUrl = `https://raw.githubusercontent.com/lintronicus/images/main/data/projects_${timestamp}.json`;
 
@@ -199,23 +204,8 @@
 
       map.on('load', function() {
         if (!timestamp) {
-          document.getElementById('error').textContent = 'No timestamp found in URL';
+          document.getElementById('error').textContent = 'Timestamp parameter missing';
           return;
-        }
-
-        try {
-          const jsonString = decodeURIComponent(encodedData);
-          geojsonData = JSON.parse(jsonString);
-
-          if (!geojsonData.features || geojsonData.features.length === 0) {
-            document.getElementById('error').textContent = 'No features found in data';
-            return;
-          }
-
-          addMarkersToMap(geojsonData);
-          document.getElementById('loading').style.display = 'none';
-        } catch (e) {
-          document.getElementById('error').textContent = 'Error processing data: ' + e.message;
         }
       });
 
