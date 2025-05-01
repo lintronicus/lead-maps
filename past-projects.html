@@ -83,7 +83,8 @@
   </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    // This function runs once the document is loaded
+    document.addEventListener('DOMContentLoaded', function() {
 
       mapboxgl.accessToken = 'pk.eyJ1IjoibGVhZHN5ZnRlciIsImEiOiJjbTd2Z2k3MjYwYjFvMnFvZHd0NmE4M3pvIn0.xHYtpfn9dQa7CZOoY29-cA';
 
@@ -100,7 +101,7 @@
       if (!timestamp) {
         document.getElementById('error').textContent = 'Timestamp parameter missing';
         document.getElementById('loading').style.display = 'none';
-        return;  // Prevent further execution if no timestamp
+        return;  // Stop further execution if no timestamp is found
       }
 
       // Construct the URL for the latest JSON file based on the timestamp
@@ -233,9 +234,7 @@
       document.getElementById('map-style').addEventListener('change', function() {
         map.setStyle(this.value);
       });
-    } catch (e) {
-      document.getElementById('error').textContent = 'Initialization error: ' + e.message;
-    }
+    });
   </script>
 </body>
 </html>
