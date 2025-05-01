@@ -83,7 +83,8 @@
   </div>
 
   <script>
-    try {
+    document.addEventListener('DOMContentLoaded', function () {
+
       mapboxgl.accessToken = 'pk.eyJ1IjoibGVhZHN5ZnRlciIsImEiOiJjbTd2Z2k3MjYwYjFvMnFvZHd0NmE4M3pvIn0.xHYtpfn9dQa7CZOoY29-cA';
 
       const map = new mapboxgl.Map({
@@ -197,8 +198,7 @@
 
       // Function to add markers to the map
       function addMarkersToMap(geojson) {
-        markers.forEach(marker => marker.remove());
-        markers = [];
+        const markers = [];
 
         geojson.features.forEach(feature => {
           const coords = feature.geometry.coordinates;
@@ -216,6 +216,7 @@
         });
       }
 
+      // Map event handlers
       map.on('load', function() {
         if (!timestamp) {
           document.getElementById('error').textContent = 'Timestamp parameter missing';
