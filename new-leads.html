@@ -188,6 +188,7 @@
         });
       }
 
+      // ✅ Wider zoom padding for less cramped view
       function fitMapToBounds(geojson) {
         let minLng = 180, maxLng = -180, minLat = 90, maxLat = -90;
 
@@ -200,7 +201,9 @@
         });
 
         const bounds = new mapboxgl.LngLatBounds([minLng, minLat], [maxLng, maxLat]);
-        map.fitBounds(bounds, { padding: { top: 100, bottom: 100, left: 100, right: 100 } });
+        map.fitBounds(bounds, {
+          padding: { top: 150, bottom: 150, left: 150, right: 150 }
+        });
       }
 
       document.getElementById('map-style').addEventListener('change', function() {
@@ -210,4 +213,3 @@
   </script>
 </body>
 </html>
-
