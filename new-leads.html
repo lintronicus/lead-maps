@@ -44,19 +44,13 @@
       border-radius: 4px;
       border: 1px solid #ccc;
     }
-    #loading { 
-      position: absolute; 
-      top: 0; 
-      left: 0; 
-      width: 100%; 
-      height: 100%; 
-      background: rgba(255,255,255,0.9); 
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 999;
-      font-family: sans-serif;
+    #loading {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(255,255,255,0.9);
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      z-index: 999; font-family: sans-serif;
     }
     #error { color: red; margin-top: 20px; text-align: center; max-width: 80%; }
   </style>
@@ -74,6 +68,7 @@
       <option value="mapbox://styles/mapbox/satellite-streets-v12">Satellite Streets</option>
       <option value="mapbox://styles/mapbox/navigation-day-v1">Navigation Day</option>
       <option value="mapbox://styles/mapbox/navigation-night-v1">Navigation Night</option>
+      <option value="3d-terrain">3D Satellite View</option>
     </select>
   </div>
 
@@ -84,7 +79,6 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-
       mapboxgl.accessToken = 'pk.eyJ1IjoibGVhZHN5ZnRlciIsImEiOiJjbTd2Z2k3MjYwYjFvMnFvZHd0NmE4M3pvIn0.xHYtpfn9dQa7CZOoY29-cA';
 
       const map = new mapboxgl.Map({
@@ -95,7 +89,6 @@
       });
 
       const timestamp = new URLSearchParams(window.location.search).get('t');
-
       if (!timestamp) {
         document.getElementById('error').textContent = 'Timestamp parameter missing';
         document.getElementById('loading').style.display = 'none';
@@ -188,10 +181,8 @@
         });
       }
 
-      // ✅ Wider zoom padding for less cramped view
       function fitMapToBounds(geojson) {
         let minLng = 180, maxLng = -180, minLat = 90, maxLat = -90;
-
         geojson.features.forEach(f => {
           const [lng, lat] = f.geometry.coordinates;
           minLng = Math.min(minLng, lng);
@@ -199,17 +190,42 @@
           minLat = Math.min(minLat, lat);
           maxLat = Math.max(maxLat, lat);
         });
-
         const bounds = new mapboxgl.LngLatBounds([minLng, minLat], [maxLng, maxLat]);
         map.fitBounds(bounds, {
           padding: { top: 150, bottom: 150, left: 150, right: 150 }
         });
       }
 
-      document.getElementById('map-style').addEventListener('change', function() {
-        map.setStyle(this.value);
+      document.getElementById('map-style').addEventListener('change', function () {
+        const selected = this.value;
+        if (selected === '3d-terrain') {
+          map.setStyle('mapbox://styles/mapbox/satellite-streets-v12');
+          map.once('styledata', () => {
+            map.setPitch(60);
+            map.setBearing(-17.6);
+            map.addSource('mapbox-dem', {
+              type: 'raster-dem',
+              url: 'mapbox://mapbox.terrain-rgb',
+              tileSize: 512,
+              maxzoom: 14
+            });
+            map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+            map.addLayer({
+              id: 'sky',
+              type: 'sky',
+              paint: {
+                'sky-type': 'atmosphere',
+                'sky-atmosphere-sun': [0.0, 0.0],
+                'sky-atmosphere-sun-intensity': 15
+              }
+            });
+          });
+        } else {
+          map.setStyle(selected);
+        }
       });
     });
   </script>
 </body>
 </html>
+
