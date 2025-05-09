@@ -46,17 +46,11 @@
     }
     #loading {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(255,255,255,0.9);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 999;
-      font-family: sans-serif;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      z-index: 999; font-family: sans-serif;
     }
     #error { color: red; margin-top: 20px; text-align: center; max-width: 80%; }
   </style>
@@ -72,8 +66,7 @@
       <option value="mapbox://styles/mapbox/outdoors-v12">Outdoors</option>
       <option value="mapbox://styles/mapbox/satellite-v9">Satellite</option>
       <option value="mapbox://styles/mapbox/satellite-streets-v12">Satellite Streets</option>
-      <option value="mapbox://styles/mapbox/navigation-day-v1">Navigation Day</option>
-      <option value="mapbox://styles/mapbox/navigation-night-v1">Navigation Night</option>
+      <option value="3d-terrain">3D Satellite View</option>
     </select>
   </div>
 
@@ -84,7 +77,6 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-
       mapboxgl.accessToken = 'pk.eyJ1IjoibGVhZHN5ZnRlciIsImEiOiJjbTd2Z2k3MjYwYjFvMnFvZHd0NmE4M3pvIn0.xHYtpfn9dQa7CZOoY29-cA';
 
       const map = new mapboxgl.Map({
@@ -95,7 +87,6 @@
       });
 
       const timestamp = new URLSearchParams(window.location.search).get('t');
-
       if (!timestamp) {
         document.getElementById('error').textContent = 'Timestamp parameter missing';
         document.getElementById('loading').style.display = 'none';
@@ -142,13 +133,13 @@
           document.getElementById('loading').style.display = 'none';
         });
 
+      function createGoogleMapsUrl(coords) {
+        return `https://www.google.com/maps/dir/?api=1&destination=${coords[1]},${coords[0]}&travelmode=driving`;
+      }
+
       function createStreetViewUrl(panoLat, panoLng, heading) {
         if (!panoLat || !panoLng) return null;
         return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${panoLat},${panoLng}${heading ? `&heading=${heading}` : ''}`;
-      }
-
-      function createGoogleMapsUrl(coords) {
-        return `https://www.google.com/maps/dir/?api=1&destination=${coords[1]},${coords[0]}&travelmode=driving`;
       }
 
       function createPopupHTML(props, coords) {
@@ -206,8 +197,33 @@
         });
       }
 
-      document.getElementById('map-style').addEventListener('change', function() {
-        map.setStyle(this.value);
+      document.getElementById('map-style').addEventListener('change', function () {
+        const selected = this.value;
+        if (selected === '3d-terrain') {
+          map.setStyle('mapbox://styles/mapbox/satellite-streets-v12');
+          map.once('styledata', () => {
+            map.setPitch(60);
+            map.setBearing(-17.6);
+            map.addSource('mapbox-dem', {
+              type: 'raster-dem',
+              url: 'mapbox://mapbox.terrain-rgb',
+              tileSize: 512,
+              maxzoom: 14
+            });
+            map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+            map.addLayer({
+              id: 'sky',
+              type: 'sky',
+              paint: {
+                'sky-type': 'atmosphere',
+                'sky-atmosphere-sun': [0.0, 0.0],
+                'sky-atmosphere-sun-intensity': 15
+              }
+            });
+          });
+        } else {
+          map.setStyle(selected);
+        }
       });
     });
   </script>
