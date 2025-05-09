@@ -115,11 +115,11 @@
             features: data.map(item => ({
               type: "Feature",
               properties: {
+                property_name: item.property_name,
                 type: item.type,
                 status: item.status,
                 price: item.price,
                 sq_ft: item.sq_ft,
-                units: item.units,
                 project_address: item.project_address,
                 photo_url: item.photo_url,
                 pano_latitude: parseFloat(item.pano_latitude),
@@ -142,22 +142,22 @@
           document.getElementById('loading').style.display = 'none';
         });
 
-      function createGoogleMapsUrl(coords) {
-        return `https://www.google.com/maps/dir/?api=1&destination=${coords[1]},${coords[0]}&travelmode=driving`;
-      }
-
       function createStreetViewUrl(panoLat, panoLng, heading) {
         if (!panoLat || !panoLng) return null;
         return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${panoLat},${panoLng}${heading ? `&heading=${heading}` : ''}`;
       }
 
+      function createGoogleMapsUrl(coords) {
+        return `https://www.google.com/maps/dir/?api=1&destination=${coords[1]},${coords[0]}&travelmode=driving`;
+      }
+
       function createPopupHTML(props, coords) {
-        const type = props.type || "N/A";
-        const status = props.status || "N/A";
-        const price = props.price || "";
-        const sqFt = props.sq_ft ? `${parseInt(props.sq_ft).toLocaleString()} Sq Ft` : "";
-        const units = props.units ? `${props.units} Units` : "";
+        const name = props.property_name || "Unnamed Property";
         const address = props.project_address || "No address provided";
+        const type = props.type || "N/A";
+        const sqFt = props.sq_ft ? `${parseInt(props.sq_ft).toLocaleString()} Sq Ft` : "";
+        const price = props.price || "";
+        const status = props.status || "N/A";
         const photoUrl = props.photo_url;
         const streetViewUrl = createStreetViewUrl(props.pano_latitude, props.pano_longitude, props.heading);
         const googleMapsUrl = createGoogleMapsUrl(coords);
@@ -165,19 +165,19 @@
         const imageHtml = photoUrl && streetViewUrl
           ? `<div style="margin-top:10px; margin-bottom:10px; max-height:180px; overflow:hidden;">
               <a href="${streetViewUrl}" target="_blank" rel="noopener noreferrer">
-                <img src="${photoUrl}" alt="Property Photo" loading="lazy">
+                <img src="${photoUrl}" alt="Photo of ${name}" loading="lazy">
               </a>
             </div>` : "";
 
         return `
           <div class="property-popup">
-            <h3>${type}</h3>
-            <p><strong>Status:</strong> ${status}</p>
-            ${price ? `<p><strong>Price:</strong> ${price}</p>` : ""}
-            ${sqFt ? `<p><strong>Sq Ft:</strong> ${sqFt}</p>` : ""}
-            ${units ? `<p><strong>Units:</strong> ${units}</p>` : ""}
-            <p><strong>Address:</strong> ${address}</p>
+            <h3>${name}</h3>
             ${imageHtml}
+            <p><strong>Address:</strong> ${address}</p>
+            <p><strong>Type:</strong> ${type}</p>
+            ${sqFt ? `<p><strong>Sq Ft:</strong> ${sqFt}</p>` : ""}
+            ${price ? `<p><strong>Price:</strong> ${price}</p>` : ""}
+            <p><strong>Status:</strong> ${status}</p>
             <a href="${googleMapsUrl}" class="nav-link" target="_blank">Navigate in Google Maps</a>
           </div>`;
       }
@@ -201,7 +201,9 @@
           maxLat = Math.max(maxLat, lat);
         });
         const bounds = new mapboxgl.LngLatBounds([minLng, minLat], [maxLng, maxLat]);
-        map.fitBounds(bounds, { padding: { top: 150, bottom: 150, left: 150, right: 150 } });
+        map.fitBounds(bounds, {
+          padding: { top: 150, bottom: 150, left: 150, right: 150 }
+        });
       }
 
       document.getElementById('map-style').addEventListener('change', function() {
@@ -211,4 +213,3 @@
   </script>
 </body>
 </html>
-
