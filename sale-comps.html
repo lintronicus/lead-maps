@@ -93,45 +93,37 @@
         return;
       }
 
-      const jsonUrl = `https://raw.githubusercontent.com/lintronicus/images/main/data/projects_${timestamp}.json`;
+      const compsUrl = `https://raw.githubusercontent.com/lintronicus/images/main/comps_${timestamp}.geojson`;
+      const subjectsUrl = `https://raw.githubusercontent.com/lintronicus/images/main/subjects_${timestamp}.geojson`;
 
-      fetch(jsonUrl)
-        .then(res => {
-          if (!res.ok) throw new Error('Failed to fetch JSON: ' + res.statusText);
+      Promise.all([
+        fetch(compsUrl).then(res => {
+          if (!res.ok) throw new Error('Failed to fetch comps: ' + res.statusText);
+          return res.json();
+        }),
+        fetch(subjectsUrl).then(res => {
+          if (!res.ok) throw new Error('Failed to fetch subjects: ' + res.statusText);
           return res.json();
         })
-        .then(data => {
-          const geojsonData = {
-            type: "FeatureCollection",
-            features: data.map(item => ({
-              type: "Feature",
-              properties: {
-                property_name: item.property_name,
-                type: item.type,
-                status: item.status,
-                price: item.price,
-                sq_ft: item.sq_ft,
-                project_address: item.project_address,
-                photo_url: item.photo_url,
-                pano_latitude: parseFloat(item.pano_latitude),
-                pano_longitude: parseFloat(item.pano_longitude),
-                heading: parseFloat(item.heading)
-              },
-              geometry: {
-                type: "Point",
-                coordinates: [parseFloat(item.longitude), parseFloat(item.latitude)]
-              }
-            }))
-          };
+      ])
+      .then(([comps, subjects]) => {
+        const allFeatures = [...comps.features, ...subjects.features];
+        addMarkersToMap(allFeatures);
+        fitMapToBounds(allFeatures);
+        document.getElementById('loading').style.display = 'none';
+      })
+      .catch(err => {
+        document.getElementById('error').textContent = "Error loading map data: " + err.message;
+        document.getElementById('loading').style.display = 'none';
+      });
 
-          addMarkersToMap(geojsonData);
-          fitMapToBounds(geojsonData);
-          document.getElementById('loading').style.display = 'none';
-        })
-        .catch(err => {
-          document.getElementById('error').textContent = "Error loading map data: " + err.message;
-          document.getElementById('loading').style.display = 'none';
-        });
+      function getMarkerColor(type, status) {
+        if (type === 'subject') return '#003D60';     // Blue
+        if (status === 'active') return '#00B894';    // Green
+        if (status === 'escrow') return '#F8E025';    // Orange
+        if (status === 'sold') return '#E74C3C';      // Red
+        return '#CCCCCC';                             // Fallback
+      }
 
       function createGoogleMapsUrl(coords) {
         return `https://www.google.com/maps/dir/?api=1&destination=${coords[1]},${coords[0]}&travelmode=driving`;
@@ -165,26 +157,27 @@
             <h3>${name}</h3>
             ${imageHtml}
             <p><strong>Address:</strong> ${address}</p>
-            <p><strong>Type:</strong> ${type}</p>
+            ${props.type !== 'subject' ? `<p><strong>Type:</strong> ${type}</p>` : ""}
             ${sqFt ? `<p><strong>Sq Ft:</strong> ${sqFt}</p>` : ""}
-            ${price ? `<p><strong>Price:</strong> ${price}</p>` : ""}
+            ${props.type !== 'subject' && price ? `<p><strong>Price:</strong> ${price}</p>` : ""}
             <p><strong>Status:</strong> ${status}</p>
             <a href="${googleMapsUrl}" class="nav-link" target="_blank">Navigate in Google Maps</a>
           </div>`;
       }
 
-      function addMarkersToMap(geojson) {
-        geojson.features.forEach(feature => {
+      function addMarkersToMap(features) {
+        features.forEach(feature => {
           const coords = feature.geometry.coordinates;
           const props = feature.properties;
           const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(createPopupHTML(props, coords));
-          new mapboxgl.Marker({ color: '#3887be' }).setLngLat(coords).setPopup(popup).addTo(map);
+          const color = getMarkerColor(props.type, props.status);
+          new mapboxgl.Marker({ color }).setLngLat(coords).setPopup(popup).addTo(map);
         });
       }
 
-      function fitMapToBounds(geojson) {
+      function fitMapToBounds(features) {
         let minLng = 180, maxLng = -180, minLat = 90, maxLat = -90;
-        geojson.features.forEach(f => {
+        features.forEach(f => {
           const [lng, lat] = f.geometry.coordinates;
           minLng = Math.min(minLng, lng);
           maxLng = Math.max(maxLng, lng);
@@ -229,3 +222,4 @@
   </script>
 </body>
 </html>
+
