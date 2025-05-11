@@ -93,23 +93,36 @@
         return;
       }
 
-      const compsUrl = `https://raw.githubusercontent.com/lintronicus/images/main/comps_${timestamp}.geojson`;
-      const subjectsUrl = `https://raw.githubusercontent.com/lintronicus/images/main/subjects_${timestamp}.geojson`;
+      const compsUrl = `https://raw.githubusercontent.com/lintronicus/images/main/comps_${timestamp}.json`;
+      const subjectsUrl = `https://raw.githubusercontent.com/lintronicus/images/main/subjects_${timestamp}.json`;
 
       Promise.all([
-        fetch(compsUrl).then(res => {
-          if (!res.ok) throw new Error('Failed to fetch comps: ' + res.statusText);
-          return res.json();
-        }),
-        fetch(subjectsUrl).then(res => {
-          if (!res.ok) throw new Error('Failed to fetch subjects: ' + res.statusText);
-          return res.json();
-        })
+        fetch(compsUrl).then(res => res.json()),
+        fetch(subjectsUrl).then(res => res.json())
       ])
       .then(([comps, subjects]) => {
-        const allFeatures = [...comps.features, ...subjects.features];
-        addMarkersToMap(allFeatures);
-        fitMapToBounds(allFeatures);
+        const features = [...comps, ...subjects].map(item => ({
+          type: "Feature",
+          geometry: {
+            type: "Point",
+            coordinates: [parseFloat(item.longitude), parseFloat(item.latitude)]
+          },
+          properties: {
+            property_name: item.property_name,
+            project_address: item.project_address,
+            photo_url: item.photo_url,
+            pano_latitude: parseFloat(item.pano_latitude),
+            pano_longitude: parseFloat(item.pano_longitude),
+            heading: parseFloat(item.heading),
+            sq_ft: item.sq_ft,
+            status: item.status,
+            price: item.price,
+            type: item.type
+          }
+        }));
+
+        addMarkersToMap(features);
+        fitMapToBounds(features);
         document.getElementById('loading').style.display = 'none';
       })
       .catch(err => {
@@ -118,11 +131,11 @@
       });
 
       function getMarkerColor(type, status) {
-        if (type === 'subject') return '#003D60';     // Blue
-        if (status === 'active') return '#00B894';    // Green
-        if (status === 'escrow') return '#F8E025';    // Orange
-        if (status === 'sold') return '#E74C3C';      // Red
-        return '#CCCCCC';                             // Fallback
+        if (type === 'subject') return '#003D60';
+        if (status === 'active') return '#00B894';
+        if (status === 'escrow') return '#F8E025';
+        if (status === 'sold') return '#E74C3C';
+        return '#CCCCCC';
       }
 
       function createGoogleMapsUrl(coords) {
@@ -222,4 +235,3 @@
   </script>
 </body>
 </html>
-
