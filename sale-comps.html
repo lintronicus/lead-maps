@@ -93,15 +93,16 @@
         return;
       }
 
-      const compsUrl = `https://raw.githubusercontent.com/lintronicus/images/main/comps_${timestamp}.json`;
-      const subjectsUrl = `https://raw.githubusercontent.com/lintronicus/images/main/subjects_${timestamp}.json`;
+      const compsUrl = `https://raw.githubusercontent.com/lintronicus/images/main/data/comps_${timestamp}.json`;
+      const subjectsUrl = `https://raw.githubusercontent.com/lintronicus/images/main/data/subject_properties_${timestamp}.json`;
 
       Promise.all([
         fetch(compsUrl).then(res => res.json()),
         fetch(subjectsUrl).then(res => res.json())
       ])
       .then(([comps, subjects]) => {
-        const features = [...comps, ...subjects].map(item => ({
+        const all = [...comps, ...subjects];
+        const features = all.map(item => ({
           type: "Feature",
           geometry: {
             type: "Point",
