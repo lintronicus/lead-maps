@@ -136,10 +136,13 @@
       }
 
       function getMarkerColor(type, status) {
-        if (type === 'subject') return '#003D60';
-        if (status === 'active') return '#00B894';
-        if (status === 'escrow') return '#F8E025';
-        if (status === 'sold') return '#E74C3C';
+        const normalizedType = (type || '').toLowerCase();
+        const normalizedStatus = (status || '').toLowerCase();
+
+        if (normalizedType === 'subject') return '#003D60';
+        if (normalizedStatus === 'active') return '#00B894';
+        if (normalizedStatus === 'escrow') return '#F8E025';
+        if (normalizedStatus === 'sold') return '#E74C3C';
         return '#CCCCCC';
       }
 
