@@ -76,7 +76,7 @@
   </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', async function () {
       mapboxgl.accessToken = 'pk.eyJ1IjoibGVhZHN5ZnRlciIsImEiOiJjbTd2Z2k3MjYwYjFvMnFvZHd0NmE4M3pvIn0.xHYtpfn9dQa7CZOoY29-cA';
 
       const map = new mapboxgl.Map({
@@ -93,16 +93,21 @@
         return;
       }
 
-      const compsUrl = `https://raw.githubusercontent.com/lintronicus/images/main/data/comps_${timestamp}.json`;
-      const subjectsUrl = `https://raw.githubusercontent.com/lintronicus/images/main/data/subject_properties_${timestamp}.json`;
+      const subjectMetaUrl = `https://api.github.com/repos/lintronicus/images/contents/data/subject_properties_${timestamp}.json`;
+      const compsMetaUrl = `https://api.github.com/repos/lintronicus/images/contents/data/comps_${timestamp}.json`;
 
-      Promise.all([
-        fetch(compsUrl).then(res => res.json()),
-        fetch(subjectsUrl).then(res => res.json())
-      ])
-      .then(([comps, subjects]) => {
-        const all = [...comps, ...subjects];
-        const features = all.map(item => ({
+      try {
+        const [subjectMeta, compsMeta] = await Promise.all([
+          fetch(subjectMetaUrl).then(r => r.json()),
+          fetch(compsMetaUrl).then(r => r.json())
+        ]);
+
+        const [subjectData, compsData] = await Promise.all([
+          fetch(subjectMeta.download_url).then(r => r.json()),
+          fetch(compsMeta.download_url).then(r => r.json())
+        ]);
+
+        const features = [...subjectData, ...compsData].map(item => ({
           type: "Feature",
           geometry: {
             type: "Point",
@@ -125,11 +130,10 @@
         addMarkersToMap(features);
         fitMapToBounds(features);
         document.getElementById('loading').style.display = 'none';
-      })
-      .catch(err => {
+      } catch (err) {
         document.getElementById('error').textContent = "Error loading map data: " + err.message;
         document.getElementById('loading').style.display = 'none';
-      });
+      }
 
       function getMarkerColor(type, status) {
         if (type === 'subject') return '#003D60';
@@ -139,8 +143,8 @@
         return '#CCCCCC';
       }
 
-      function createGoogleMapsUrl(coords) {
-        return `https://www.google.com/maps/dir/?api=1&destination=${coords[1]},${coords[0]}&travelmode=driving`;
+      function createGoogleMapsUrl(coords, name) {
+        return `https://www.google.com/maps/dir/?api=1&destination=${coords[1]},${coords[0]}&travelmode=driving&destination_place_name=${encodeURIComponent(name || 'Property')}`;
       }
 
       function createStreetViewUrl(panoLat, panoLng, heading) {
@@ -157,7 +161,7 @@
         const status = props.status || "N/A";
         const photoUrl = props.photo_url;
         const streetViewUrl = createStreetViewUrl(props.pano_latitude, props.pano_longitude, props.heading);
-        const googleMapsUrl = createGoogleMapsUrl(coords);
+        const googleMapsUrl = createGoogleMapsUrl(coords, name);
 
         const imageHtml = photoUrl && streetViewUrl
           ? `<div style="margin-top:10px; margin-bottom:10px; max-height:180px; overflow:hidden;">
@@ -236,3 +240,4 @@
   </script>
 </body>
 </html>
+
