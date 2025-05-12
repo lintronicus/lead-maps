@@ -165,11 +165,11 @@
         document.getElementById('loading').style.display = 'none';
       }
 
-      function getMarkerColor(type, status) {
-        const normalizedType = (type || '').toLowerCase();
+      function getMarkerColor(type, status, price) {
         const normalizedStatus = (status || '').toLowerCase();
+        const isSubject = !type && !price;
 
-        if (normalizedType === 'subject') return '#3887be';
+        if (isSubject) return '#3887be';      // Subject
         if (normalizedStatus === 'active') return '#27ae60';
         if (normalizedStatus === 'escrow') return '#f39c12';
         if (normalizedStatus === 'sold') return '#c0392b';
@@ -193,6 +193,7 @@
         const photoUrl = props.photo_url;
         const streetViewUrl = createStreetViewUrl(props.pano_latitude, props.pano_longitude, props.heading);
         const googleMapsUrl = createGoogleMapsUrl(coords, name);
+        const isSubject = !props.type && !props.price;
 
         const imageHtml = photoUrl && streetViewUrl
           ? `<div style="margin-top:10px; margin-bottom:10px; max-height:180px; overflow:hidden;">
@@ -207,7 +208,7 @@
             ${imageHtml}
             <p><strong>Address:</strong> ${address}</p>
             ${sqFt ? `<p><strong>Sq Ft:</strong> ${sqFt}</p>` : ""}
-            ${props.type !== 'subject' ? `<p><strong>Status:</strong> ${status}</p>` : ""}
+            ${!isSubject ? `<p><strong>Status:</strong> ${status}</p>` : ""}
             <a href="${googleMapsUrl}" class="nav-link" target="_blank">Navigate in Google Maps</a>
           </div>`;
       }
@@ -217,7 +218,7 @@
           const coords = feature.geometry.coordinates;
           const props = feature.properties;
           const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(createPopupHTML(props, coords));
-          const color = getMarkerColor(props.type, props.status);
+          const color = getMarkerColor(props.type, props.status, props.price);
           new mapboxgl.Marker({ color }).setLngLat(coords).setPopup(popup).addTo(map);
         });
       }
