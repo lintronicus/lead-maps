@@ -44,6 +44,29 @@
       border-radius: 4px;
       border: 1px solid #ccc;
     }
+    #legend {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: white;
+      padding: 10px;
+      font-family: sans-serif;
+      font-size: 13px;
+      border-radius: 4px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      z-index: 1;
+    }
+    .legend-item {
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+    }
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      margin-right: 6px;
+      border-radius: 50%;
+    }
     #loading {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -57,6 +80,13 @@
 </head>
 <body>
   <div id="map"></div>
+
+  <div id="legend">
+    <div class="legend-item"><div class="legend-color" style="background:#3887be"></div>Subject Property</div>
+    <div class="legend-item"><div class="legend-color" style="background:#27ae60"></div>Active</div>
+    <div class="legend-item"><div class="legend-color" style="background:#f39c12"></div>Escrow</div>
+    <div class="legend-item"><div class="legend-color" style="background:#c0392b"></div>Sold</div>
+  </div>
 
   <div id="style-selector">
     <select id="map-style">
@@ -139,10 +169,10 @@
         const normalizedType = (type || '').toLowerCase();
         const normalizedStatus = (status || '').toLowerCase();
 
-        if (normalizedType === 'subject') return '#003D60';
-        if (normalizedStatus === 'active') return '#00B894';
-        if (normalizedStatus === 'escrow') return '#F8E025';
-        if (normalizedStatus === 'sold') return '#E74C3C';
+        if (normalizedType === 'subject') return '#3887be';
+        if (normalizedStatus === 'active') return '#27ae60';
+        if (normalizedStatus === 'escrow') return '#f39c12';
+        if (normalizedStatus === 'sold') return '#c0392b';
         return '#CCCCCC';
       }
 
@@ -158,9 +188,7 @@
       function createPopupHTML(props, coords) {
         const name = props.property_name || "Unnamed Property";
         const address = props.project_address || "No address provided";
-        const type = props.type || "N/A";
         const sqFt = props.sq_ft ? `${parseInt(props.sq_ft).toLocaleString()} Sq Ft` : "";
-        const price = props.price || "";
         const status = props.status || "N/A";
         const photoUrl = props.photo_url;
         const streetViewUrl = createStreetViewUrl(props.pano_latitude, props.pano_longitude, props.heading);
@@ -178,10 +206,8 @@
             <h3>${name}</h3>
             ${imageHtml}
             <p><strong>Address:</strong> ${address}</p>
-            ${props.type !== 'subject' ? `<p><strong>Type:</strong> ${type}</p>` : ""}
             ${sqFt ? `<p><strong>Sq Ft:</strong> ${sqFt}</p>` : ""}
-            ${props.type !== 'subject' && price ? `<p><strong>Price:</strong> ${price}</p>` : ""}
-            <p><strong>Status:</strong> ${status}</p>
+            ${props.type !== 'subject' ? `<p><strong>Status:</strong> ${status}</p>` : ""}
             <a href="${googleMapsUrl}" class="nav-link" target="_blank">Navigate in Google Maps</a>
           </div>`;
       }
@@ -243,4 +269,3 @@
   </script>
 </body>
 </html>
-
