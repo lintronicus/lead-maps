@@ -190,9 +190,18 @@
           minLat = Math.min(minLat, lat);
           maxLat = Math.max(maxLat, lat);
         });
+
+        // Add ~1 mile (~0.015 degrees) buffer to all sides
+        const buffer = 0.015;
+        minLng -= buffer;
+        maxLng += buffer;
+        minLat -= buffer;
+        maxLat += buffer;
+
         const bounds = new mapboxgl.LngLatBounds([minLng, minLat], [maxLng, maxLat]);
         map.fitBounds(bounds, {
-          padding: { top: 150, bottom: 150, left: 150, right: 150 }
+          padding: { top: 150, bottom: 150, left: 150, right: 150 },
+          duration: 0
         });
       }
 
@@ -228,4 +237,3 @@
   </script>
 </body>
 </html>
-
