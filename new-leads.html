@@ -6,6 +6,7 @@
   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6.5.0/turf.min.js"></script>
   <style>
     body { margin: 0; padding: 0; }
     #map { position: absolute; top: 0; bottom: 0; width: 100%; }
@@ -182,23 +183,14 @@
       }
 
       function fitMapToBounds(geojson) {
-        let minLng = 180, maxLng = -180, minLat = 90, maxLat = -90;
-        geojson.features.forEach(f => {
-          const [lng, lat] = f.geometry.coordinates;
-          minLng = Math.min(minLng, lng);
-          maxLng = Math.max(maxLng, lng);
-          minLat = Math.min(minLat, lat);
-          maxLat = Math.max(maxLat, lat);
-        });
+        const fc = turf.featureCollection(geojson.features);
+        const buffered = turf.buffer(fc, 0.5, { units: 'miles' });
+        const boundsArray = turf.bbox(buffered); // [minLng, minLat, maxLng, maxLat]
+        const bounds = new mapboxgl.LngLatBounds(
+          [boundsArray[0], boundsArray[1]],
+          [boundsArray[2], boundsArray[3]]
+        );
 
-        // Add ~1 mile (~0.015 degrees) buffer to all sides
-        const buffer = 0.015;
-        minLng -= buffer;
-        maxLng += buffer;
-        minLat -= buffer;
-        maxLat += buffer;
-
-        const bounds = new mapboxgl.LngLatBounds([minLng, minLat], [maxLng, maxLat]);
         map.fitBounds(bounds, {
           padding: { top: 150, bottom: 150, left: 150, right: 150 },
           duration: 0
