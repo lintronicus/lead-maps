@@ -141,7 +141,7 @@
 
       function createStreetViewUrl(panoLat, panoLng, heading) {
         if (!panoLat || !panoLng) return null;
-        return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${panoLat},${panoLng}${heading ? `&heading=${heading}` : ''}`;
+        return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${panoLat},${panoLng}&heading=${heading}&pitch=0&fov=80`;
       }
 
       function createPopupHTML(props, coords) {
@@ -185,7 +185,7 @@
       function fitMapToBounds(geojson) {
         const fc = turf.featureCollection(geojson.features);
         const buffered = turf.buffer(fc, 0.5, { units: 'miles' });
-        const boundsArray = turf.bbox(buffered); // [minLng, minLat, maxLng, maxLat]
+        const boundsArray = turf.bbox(buffered);
         const bounds = new mapboxgl.LngLatBounds(
           [boundsArray[0], boundsArray[1]],
           [boundsArray[2], boundsArray[3]]
